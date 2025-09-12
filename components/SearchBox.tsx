@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import TodoItem from "../components/TodoItem";
+import AddTodo from "../components/AddTodo";
 
 interface Todo {
   id: number;
@@ -9,9 +10,6 @@ interface Todo {
 
 export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [newTask, setNewTask] = useState("");
-  const [searchId, setSearchId] = useState("");
-  const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
     fetch("/api/todos")
@@ -21,17 +19,15 @@ export default function Home() {
       );
   }, []);
 
-  const addTodo = async () => {
-    if (!newTask.trim()) return;
+  const addTodo = async (text: string) => {
     const res = await fetch("/api/todos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: newTask }),
+      body: JSON.stringify({ text }),
     });
     if (res.ok) {
       const newTodo = await res.json();
       setTodos([...todos, { ...newTodo, completed: false }]);
-      setNewTask("");
     }
   };
 
@@ -54,48 +50,22 @@ export default function Home() {
     <div className="p-6 min-h-screen bg-gray-100 flex flex-col items-center">
       <h1 className="text-2xl font-bold mb-6">📝 To-Do List</h1>
 
-      {/* Ekleme ve arama kutuları aynı satırda */}
-      <div className="flex gap-6 w-full max-w-4xl mb-6">
-        {/* Sol taraf - Yeni görev ekleme */}
-        <div className="flex-1 flex gap-2">
-          <input
-            type="text"
-            className="border p-2 rounded flex-1"
-            placeholder="Yeni görev ekle"
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addTodo()}
-          />
-          <button
-            onClick={addTodo}
-            disabled={!newTask.trim()}
-            className={`px-4 py-2 rounded text-white ${
-              !newTask.trim()
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600"
-            }`}
-          >
-            Ekle
-          </button>
+      <div className="flex gap-4 w-full max-w-3xl mb-6">
+        <div className="flex-1">
+          <AddTodo onAdd={addTodo} />
         </div>
 
-        {/* Sağ taraf - Arama kutuları */}
-        <div className="w-1/2 flex flex-col gap-2">
+        <div className="flex flex-col gap-2 w-1/2">
           <div className="flex gap-2">
             <input
               type="number"
               className="border p-2 rounded flex-1"
               placeholder="ID ile ara"
-              value={searchId}
-              onChange={(e) => setSearchId(e.target.value)}
+              disabled
             />
             <button
-              disabled={!searchId.trim()}
-              className={`px-4 py-2 rounded text-white ${
-                !searchId.trim()
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-green-500 hover:bg-green-600"
-              }`}
+              disabled
+              className="px-4 py-2 rounded text-white bg-gray-400 cursor-not-allowed"
             >
               Ara
             </button>
@@ -106,16 +76,11 @@ export default function Home() {
               type="text"
               className="border p-2 rounded flex-1"
               placeholder="Ad ile ara"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              disabled
             />
             <button
-              disabled={!searchText.trim()}
-              className={`px-4 py-2 rounded text-white ${
-                !searchText.trim()
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-purple-500 hover:bg-purple-600"
-              }`}
+              disabled
+              className="px-4 py-2 rounded text-white bg-gray-400 cursor-not-allowed"
             >
               Ara
             </button>
@@ -123,8 +88,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Todo listesi */}
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-3xl">
         {todos.map((todo) => (
           <TodoItem
             key={todo.id}
