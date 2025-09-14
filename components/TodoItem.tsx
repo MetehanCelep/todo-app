@@ -10,29 +10,38 @@ interface Todo {
 interface TodoItemProps {
   todo: Todo;
   onToggle: (id: string) => void; 
-  onDelete: (id: string) => void; 
+  onDelete: (id: string) => void;
+  disabled?: boolean;
 }
 
-export default function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
+export default function TodoItem({ todo, onToggle, onDelete, disabled = false }: TodoItemProps) {
   const handleDelete = () => {
+    if (disabled) return;
+    
     if (confirm("Bu görevi silmek istediğine emin misin?")) {
       onDelete(todo.id);
     }
   };
 
+  const handleToggle = () => {
+    if (disabled) return;
+    onToggle(todo.id);
+  };
+
   return (
     <div className={`group bg-white rounded-xl p-4 mb-3 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100 ${
       todo.completed ? 'opacity-75' : ''
-    }`}>
+    } ${disabled ? 'pointer-events-none opacity-50' : ''}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3 flex-1">
           <button
-            onClick={() => onToggle(todo.id)}
+            onClick={handleToggle}
+            disabled={disabled}
             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
               todo.completed
                 ? 'bg-green-500 border-green-500 text-white'
                 : 'border-gray-300 hover:border-green-400'
-            }`}
+            } ${disabled ? 'cursor-not-allowed' : ''}`}
           >
             {todo.completed && <Check size={12} />}
           </button>
@@ -58,7 +67,10 @@ export default function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
         
         <button
           onClick={handleDelete}
-          className="opacity-0 group-hover:opacity-100 ml-4 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+          disabled={disabled}
+          className={`opacity-0 group-hover:opacity-100 ml-4 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 ${
+            disabled ? 'cursor-not-allowed' : ''
+          }`}
         >
           <Trash2 size={16} />
         </button>

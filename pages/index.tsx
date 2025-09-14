@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, { useState, useEffect } from 'react';
 import AddTodo from '../components/AddTodo';
 import TodoItem from '../components/TodoItem';
 import SearchBox from '../components/SearchBox';
@@ -9,15 +8,70 @@ import { Todo } from '../types/todo';
 export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const addTodo = (text: string) => {
-    const newTodo: Todo = {
-      id: uuidv4(), 
-      text,
-      completed: false,
-      createdAt: new Date(),
-    };
-    setTodos([newTodo, ...todos]);
+  useEffect(() => {
+    fetchTodos();
+  }, []);
+
+  const fetchTodos = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/todos');
+      
+      if (!response.ok) {
+        throw new Error('Todos getirilemedi');
+      }
+      
+      const backendTodos = await response.json();
+      
+      const formattedTodos = backendTodos.map((todo: any) => ({
+        ...todo,
+        completed: false,
+        createdAt: new Date(),
+      }));
+      
+      setTodos(formattedTodos);
+    } catch (error) {
+      console.error('Todos yüklenemedi:', error);
+      setTodos([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addTodo = async (text: string) => {
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/api/todos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Todo eklenemedi');
+      }
+
+      const newBackendTodo = await response.json();
+
+      const newTodo: Todo = {
+        ...newBackendTodo,
+        completed: false,
+        createdAt: new Date(),
+      };
+
+      setTodos([newTodo, ...todos]);
+      
+    } catch (error) {
+      console.error('Todo eklenemedi:', error);
+      alert('Todo eklenirken bir hata oluştu!');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const toggleTodo = (id: string) => {
@@ -26,8 +80,26 @@ export default function Home() {
     ));
   };
 
-  const deleteTodo = (id: string) => { 
-    setTodos(todos.filter(todo => todo.id !== id));
+  const deleteTodo = async (id: string) => {
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`/api/todos?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Todo silinemedi');
+      }
+
+      setTodos(todos.filter(todo => todo.id !== id));
+      
+    } catch (error) {
+      console.error('Todo silinemedi:', error);
+      alert('Todo silinirken bir hata oluştu!');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredTodos = todos.filter(todo =>
@@ -35,19 +107,17 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="min-h-screen bg-blue-50">
+      <div className="max-w-4xl mx-auto py-6">
         
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            📝 Todo List
+          <h1 className="text-4xl font-bold text-black mb-2">
+            📝 Todo List {loading && <span className="text-sm text-blue-500">(Yükleniyor...)</span>}
           </h1>
-          <p className="text-gray-600">
-            Görevlerinizi organize edin
-          </p>
         </div>
 
-        <AddTodo onAdd={addTodo} />
+        <AddTodo onAdd={addTodo} disabled={loading} />
+        
         {todos.length > 0 && (
           <>
             <SearchBox 
@@ -59,16 +129,21 @@ export default function Home() {
           </>
         )}
 
-        <div className="space-y-2">
+        <div>
           {filteredTodos.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center">
               <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-xl font-medium text-gray-500 mb-2">
+              <h3 className="text-xl text-gray-500 mb-2">
                 {todos.length === 0 ? 'Henüz görev yok' : 'Arama sonucu bulunamadı'}
               </h3>
               <p className="text-gray-400">
                 {todos.length === 0 ? 'İlk görevini ekleyerek başla!' : 'Farklı terimler deneyebilirsin'}
               </p>
+              {loading && (
+                <div className="mt-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                </div>
+              )}
             </div>
           ) : (
             filteredTodos.map(todo => (
@@ -77,6 +152,7 @@ export default function Home() {
                 todo={todo}
                 onToggle={toggleTodo}
                 onDelete={deleteTodo}
+                disabled={loading}
               />
             ))
           )}
