@@ -1,22 +1,22 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { v4 as uuidv4 } from 'uuid';
 
 interface Todo {
-  id: number;
+  id: string;
   text: string;
 }
 
 let todos: Todo[] = [];
-let id = 1;
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {
     const { id: todoId } = req.query;
 
     if (todoId) {
-      if (isNaN(Number(todoId))) {
-        return res.status(400).json({ message: "Invalid ID" });
+      if (typeof todoId !== 'string') {
+        return res.status(400).json({ message: "Invalid ID format" });
       }
-      const todo = todos.find((t) => t.id === Number(todoId));
+      const todo = todos.find((t) => t.id === todoId);
       if (todo) {
         return res.status(200).json(todo);
       } else {
@@ -30,16 +30,20 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     if (!text || !text.trim()) {
       return res.status(400).json({ message: "Text is required" });
     }
-    const newTodo: Todo = { id: id++, text };
+ 
+    const newTodo: Todo = { 
+      id: uuidv4(),
+      text 
+    };
     todos.push(newTodo);
     return res.status(201).json(newTodo);
   } else if (req.method === "DELETE") {
     const { id: todoId } = req.query;
-    if (!todoId || isNaN(Number(todoId))) {
+    if (!todoId || typeof todoId !== 'string') {
       return res.status(400).json({ message: "Invalid ID" });
     }
     const beforeLength = todos.length;
-    todos = todos.filter((t) => t.id !== Number(todoId));
+    todos = todos.filter((t) => t.id !== todoId);
     if (todos.length === beforeLength) {
       return res.status(404).json({ message: "Todo not found" });
     }

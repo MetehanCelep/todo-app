@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Plus } from "lucide-react";
 
 interface AddTodoProps {
   onAdd: (text: string) => void;
@@ -9,31 +10,39 @@ export default function AddTodo({ onAdd }: AddTodoProps) {
 
   const handleAdd = () => {
     if (!input.trim()) return;
-    onAdd(input);
+    onAdd(input.trim());
     setInput("");
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleAdd();
+    }
+  };
+
   return (
-    <div className="flex gap-2 mb-4">
-      <input
-        type="text"
-        className="border p-2 rounded w-64"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-        placeholder="Yeni görev ekle"
-      />
-      <button
-        onClick={handleAdd}
-        disabled={!input.trim()}
-        className={`px-3 py-2 rounded text-white ${
-          !input.trim()
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-500 hover:bg-blue-600"
-        }`}
-      >
-        Ekle
-      </button>
+    <div className="relative mb-8">
+      <div className="flex items-center bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          placeholder="Yeni bir görev ekle..."
+          className="flex-1 px-6 py-4 text-gray-700 bg-transparent focus:outline-none placeholder-gray-400"
+        />
+        <button
+          onClick={handleAdd}
+          disabled={!input.trim()}
+          className={`m-2 p-3 rounded-xl transition-all duration-200 ${
+            input.trim()
+              ? 'bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:scale-105'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          <Plus size={20} />
+        </button>
+      </div>
     </div>
   );
 }
